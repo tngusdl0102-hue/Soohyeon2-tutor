@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>수현이의 공부 친구</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #FFF8F0;
+    --surface: #FFFFFF;
+    --monster-red: #E8503A;
+    --monster-dark: #C43A26;
+    --sky: #7BBFEA;
+    --grass: #6DBE8C;
+    --sun: #F5C842;
+    --text-main: #2D2D2D;
+    --text-sub: #6B6B6B;
+    --bubble-user: #E8F4FF;
+    --bubble-ai: #FFF3ED;
+    --border: #E8D8CC;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── 헤더 ── */
+  header {
+    background: var(--monster-red);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(232,80,58,0.3);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .monster-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-family: 'Gaegu', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 400;
+  }
+
+  /* 타이머 */
+  .timer {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+  }
+
+  .timer.warning { background: rgba(255,255,100,0.35); }
+  .timer.overtime { background: rgba(255,255,255,0.15); animation: pulse 1s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* ── 채팅 영역 ── */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 날짜 구분선 */
+  .date-divider {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-sub);
+    margin: 4px 0;
+  }
+
+  /* 말풍선 공통 */
+  .msg {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 88%;
+    animation: fadeUp 0.25s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.ai  { align-self: flex-start; flex-direction: row; }
+  .msg.user { align-self: flex-end;   flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--monster-red);
+    box-shadow: 0 2px 6px rgba(232,80,58,0.3);
+  }
+
+  .bubble {
+    padding: 11px 15px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.6;
+    box-shadow: var(--shadow);
+    white-space: pre-wrap;
+    word-break: keep-all;
+  }
+
+  .msg.ai  .bubble {
+    background: var(--bubble-ai);
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .msg.user .bubble {
+    background: var(--bubble-user);
+    border-bottom-right-radius: 4px;
+    border: 1px solid #C8DDEF;
+    color: #1a4a6e;
+  }
+
+  /* 타이핑 인디케이터 */
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 4px 2px;
+    align-items: center;
+  }
+
+  .typing-dots span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--monster-red);
+    animation: bounce 1.2s infinite;
+    opacity: 0.6;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* ── API 키 설정 패널 ── */
+  #api-panel {
+    background: white;
+    border-top: 2px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  #api-panel h3 {
+    font-size: 15px;
+    color: var(--text-main);
+    font-weight: 700;
+  }
+
+  #api-panel p {
+    font-size: 13px;
+    color: var(--text-sub);
+    line-height: 1.5;
+  }
+
+  .api-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  #api-key-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    background: var(--bg);
+  }
+
+  #api-key-input:focus { border-color: var(--monster-red); }
+
+  #api-save-btn {
+    padding: 10px 18px;
+    background: var(--monster-red);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+
+  /* ── 입력 영역 ── */
+  #input-area {
+    background: var(--surface);
+    border-top: 1.5px solid var(--border);
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  #user-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 22px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    max-height: 100px;
+    outline: none;
+    background: var(--bg);
+    line-height: 1.5;
+    color: var(--text-main);
+  }
+
+  #user-input:focus { border-color: var(--sky); }
+
+  /* 음성 버튼 */
+  #voice-btn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: var(--sky);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(123,191,234,0.4);
+  }
+
+  #voice-btn:active { transform: scale(0.93); }
+  #voice-btn.listening { background: var(--monster-red); animation: ringPulse 1s infinite; }
+
+  @keyframes ringPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(232,80,58,0.5); }
+    70%  { box-shadow: 0 0 0 12px rgba(232,80,58,0); }
+    100% { box-shadow: 0 0 0 0 rgba(232,80,58,0); }
+  }
+
+  /* 전송 버튼 */
+  #send-btn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: var(--monster-red);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(232,80,58,0.35);
+  }
+
+  #send-btn:disabled { background: #ccc; box-shadow: none; }
+  #send-btn:not(:disabled):active { transform: scale(0.93); }
+
+  /* 음성 상태 표시 */
+  #voice-status {
+    text-align: center;
+    font-size: 12px;
+    color: var(--monster-red);
+    padding: 2px 0 0;
+    min-height: 16px;
+    flex-basis: 100%;
+  }
+
+  .input-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+  <div class="header-left">
+    <svg class="monster-icon" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="19" cy="22" rx="13" ry="11" fill="#fff" opacity="0.95"/>
+      <ellipse cx="19" cy="22" rx="13" ry="11" fill="#FFDDD7" opacity="0.5"/>
+      <!-- 등 가시 -->
+      <polygon points="10,14 8,6 13,12" fill="#fff" opacity="0.9"/>
+      <polygon points="15,11 14,3 18,10" fill="#fff" opacity="0.9"/>
+      <polygon points="20,10 20,2 23,9" fill="#fff" opacity="0.9"/>
+      <polygon points="25,12 26,4 29,11" fill="#fff" opacity="0.9"/>
+      <!-- 눈 -->
+      <circle cx="15" cy="20" r="2.5" fill="#2D2D2D"/>
+      <circle cx="23" cy="20" r="2.5" fill="#2D2D2D"/>
+      <circle cx="15.8" cy="19.2" r="0.8" fill="white"/>
+      <circle cx="23.8" cy="19.2" r="0.8" fill="white"/>
+      <!-- 꼬리 -->
+      <path d="M32 22 Q38 18 36 28" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+      <!-- 꽃 -->
+      <circle cx="19" cy="9" r="2" fill="#F5C842"/>
+      <circle cx="19" cy="6" r="1.5" fill="#E8503A" opacity="0.7"/>
+    </svg>
+    <div>
+      <div class="header-title">수현이의 공부 친구</div>
+      <div class="header-sub">보기보다 착한 괴물 🌟</div>
+    </div>
+  </div>
+  <div class="timer" id="timer">00:00</div>
+</header>
+
+<!-- 채팅 -->
+<div id="chat">
+  <div class="date-divider" id="date-label"></div>
+</div>
+
+<!-- API 키 설정 -->
+<div id="api-panel">
+  <h3>🔑 시작하기 전에</h3>
+  <p>Anthropic API 키를 입력하면 바로 수현이 튜터가 시작돼요.<br>한 번 입력하면 다음에도 기억해요.</p>
+  <div class="api-row">
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <button id="api-save-btn">시작!</button>
+  </div>
+</div>
+
+<!-- 입력 영역 -->
+<div id="input-area" style="display:none;">
+  <button id="voice-btn" title="음성으로 말하기">🎤</button>
+  <div class="input-wrapper">
+    <textarea id="user-input" placeholder="수현이 여기에 써도 되고, 🎤 버튼 눌러서 말해도 돼!" rows="1"></textarea>
+    <div id="voice-status"></div>
+  </div>
+  <button id="send-btn">➤</button>
+</div>
+
+<script>
+// ── 상수 & 상태 ──────────────────────────────────────────
+const SYSTEM_PROMPT = `# 수현이의 AI 튜터
+
+## 너의 정체와 기본 태도
+
+너는 수현이(초등학교 5학년)의 공부 친구야. 선생님이 아니라 진짜 친구처럼 반말로 대화해. 
+하지만 수현이를 아주 깊이 존중하는, 마음이 넓고 따뜻한 친구야. 
+수현이가 어떤 말을 해도 일단 진심으로 들어주고, 틀린 생각도 탐구의 출발점으로 대해줘.
+한 번에 한 가지만 물어봐. 질문을 여러 개 한꺼번에 던지지 마.
+말은 짧고 자연스럽게. 3~4문장 이내로. 설명이 길어지면 수현이가 지루해해.
+
+## 절대 하지 말아야 할 것
+
+- "틀렸어"라고 직접 말하지 마. 대신 "어, 거기서 조금 다르게 이해한 부분이 있는 것 같아"처럼 우회적으로.
+- 정답을 바로 알려주지 마. 힌트를 단계적으로 줘.
+- 어려운 개념어나 학술적인 단어 쓰지 마. 5학년이 바로 알아듣는 쉬운 말로.
+- 부정적인 평가나 비교하는 말 하지 마.
+- 한 턴에 너무 길게 말하지 마. 3~4문장 이내로.
+- 질문을 두 개 이상 동시에 하지 마.
+
+## 세션 흐름
+
+### 1단계: 도입 - 감정 체크 (최대 5턴)
+
+세션 시작 시 항상: "수현아 안녕! 오늘 하루 어땠어?" 로 시작해.
+수현이 답변에 따라 1~3턴 자연스럽게 대화해.
+- 기분이 안 좋으면: 먼저 공감. 5턴 안에 "그런 일이 있었는데도 나랑 공부하러 왔다는 거 진짜 대단한 거야. 더 멋진 사람이 될 것 같은데?" 하고 이야기로 넘어가.
+
+### 2단계: 계획 - 이야기 소개 (2~3턴)
+
+"오늘은 '보기보다 착한 괴물' 이야기야. 제목만 보면 어떤 이야기일 것 같아?"
+수현이 예측 → "왜 그렇게 생각했어?" 한 번 더.
+그다음 짧게 소개: "세상 끝에 조용한 나라가 있었는데, 어느 날 커다란 빨간 괴물이 나타났어. 밀을 먹어치우고 불길을 내뿜어서 사람들이 엄청 무서워했거든. 근데 이 괴물이 진짜 나쁜 괴물이었을까?"
+
+### 3단계: 실행 - 국어 중심 대화 (10~15분)
+
+질문 순서:
+① "이 이야기에서 제일 기억에 남는 장면이 어디야? 왜?"
+   → "그 장면에서 괴물 마음이 어땠을 것 같아?"
+② "사람들이 처음에 왜 괴물을 나쁘다고 생각했을까?"
+   → 수현이 답을 받아서: "그러면 불을 뿜으면 다 나쁜 거야? 다른 경우는 없어?"
+③ "장군이랑 시장이 괴물한테 하려고 했던 거, 왜 안 됐을까?"
+④ "교수님은 장군, 시장이랑 뭐가 달랐어?"
+   → 핵심: 교수님은 괴물이 잘할 수 있는 걸 찾아줬다는 것.
+
+틀린 부분 발견 시 (우선 처리):
+"어, 거기서 조금 다르게 이해한 부분이 있는 것 같아."
+→ 수현이 논리를 따라가면서 스스로 모순 발견하게 질문해.
+
+막혔을 때 (틀린 부분 처리 후):
+- 힌트 1: 관련 장면 환기 질문
+- 힌트 2: 더 직접적으로 관련 내용 언급
+- 그래도 안 되면: 짧게 설명 + "이제 수현이 말로 나한테 설명해줄 수 있어? 똑같지 않아도 돼."
+- 핵심 내용 2가지 이상 자기 말로 짚으면 통과.
+
+과목 전환 시점: 경과 시간 10분 → "조금 더 할래, 아니면 수학으로 가볼까?" / 15분 → 자연스럽게 전환.
+
+### 4단계: 실행 - 수학 (약 10분)
+
+전환 멘트: "아까 괴물이 마을에서 전기를 만들어줬잖아. 그 장면 기억해? 거기서 숫자 얘기를 해보면 재밌을 것 같아."
+
+[혼합계산 - 계산 순서]
+
+문제 1: "괴물이 밀밭을 먹는 사건이 생겼어. 첫날 밭 4개, 둘째 날 밭 3개가 사라졌어. 마을 사람들이 소방차 2대를 보냈는데, 소방차 한 대가 밭 2개씩은 지켜냈대. 그럼 실제로 피해 입은 밭은 몇 개야? 식으로도 만들어봐."
+정답: 4 + 3 - 2 × 2 = 3
+핵심: 곱셈 먼저, 왜 그런지 설명할 수 있는지.
+→ "어떻게 계산했는지 순서대로 말해줘."
+→ 맞으면: "왜 곱하기를 먼저 했어? 더하기부터 하면 안 돼?"
+→ 틀리면: 힌트 1 "더하기랑 곱하기가 같이 있으면 어떤 걸 먼저 해야 하지?" / 힌트 2 "곱하기, 나누기는 더하기, 빼기보다 먼저야."
+→ 이후: "소방차가 3대였다면 식이 어떻게 바뀌어?"
+
+문제 2 (괄호): "시장님이 괴물 구경 입장료를 받으려 했어. 어른은 300원, 어린이는 200원이야. 어른 4명이랑 어린이 3명이 왔다면 총 얼마야? 식으로 만들어봐."
+정답: 300 × 4 + 200 × 3 = 1800
+→ 식 만들면: "(300 + 200) × 4 로 바꾸면 결과가 달라질까?"
+
+[약수와 배수]
+
+배수 문제: "교수님 기계가 완성됐어. 괴물이 불길을 한 번 뿜을 때마다 집 4채에 전기가 들어와. 마을에 집이 24채면 몇 번 뿜어야 해?"
+정답: 6번
+→ "어떻게 알아냈어? 말로 설명해봐."
+→ "4씩 늘어나는 수들을 4의 배수라고 해. 4의 배수를 5개만 말해봐."
+→ 심화: "만약 집이 18채라면? 딱 맞게 안 나눠지면 어떻게 해야 할까?"
+
+약수 문제: "마을 사람들이 고마워서 케이크를 24조각 구웠어. 여러 명이 똑같이 나눠 가져가려면 몇 명이 가능할까? 모든 경우를 찾아봐."
+정답: 1, 2, 3, 4, 6, 8, 12, 24
+→ "다 찾은 것 같아?"
+→ "작은 수부터 짝을 맞춰봐. 1이랑 짝은 뭐야? 2랑 짝은?"
+→ "이렇게 나누어 떨어지게 하는 수를 약수라고 해."
+
+최소공배수 (시간 여유 있을 때만): "괴물은 목욕하러 가는 날이 3일마다, 불길 뿜는 날이 4일마다야. 오늘 두 가지 다 했다면, 다음에 같은 날 겹치는 건 며칠 후야?"
+정답: 12일
+
+### 5단계: 평가 - 마무리 (3~4턴)
+
+오늘 수현이 답변 중 가장 흥미로웠던 것 1~2가지를 먼저 직접 짚어줘:
+"오늘 수현이 얘기 들으면서 진짜 흥미로웠던 게 있었어. [실제 답변]. 이게 왜 좋았냐면 [이유]."
+
+그다음: "수현이는 오늘 어떤 부분이 재밌었어? 어렵거나 재미없었던 부분은?"
+
+마무리: "다음엔 강을 사이에 두고 사는 노인과 마을 사람들 이야기야. 다음에도 수현이와 함께 이야기 나누면 좋겠어. 안녕 수현아!"
+
+## 수현이에 대해
+
+- 자기 감정을 알아주길 바라는 마음이 있어. 감정 표현에 충분히 반응해줘.
+- 수학 풀이 과정 설명을 어려워할 수 있어. 천천히 기다려줘.
+- 어떤 답을 해도 먼저 받아주고, 그다음에 질문으로 이어가.`;
+
+let apiKey = localStorage.getItem('suhyeon_api_key') || '';
+let messages = [];
+let isLoading = false;
+let timerInterval = null;
+let elapsedSeconds = 0;
+let recognition = null;
+let isListening = false;
+
+// ── DOM ────────────────────────────────────────────────
+const chat         = document.getElementById('chat');
+const inputArea    = document.getElementById('input-area');
+const apiPanel     = document.getElementById('api-panel');
+const apiKeyInput  = document.getElementById('api-key-input');
+const apiSaveBtn   = document.getElementById('api-save-btn');
+const userInput    = document.getElementById('user-input');
+const sendBtn      = document.getElementById('send-btn');
+const voiceBtn     = document.getElementById('voice-btn');
+const voiceStatus  = document.getElementById('voice-status');
+const timerEl      = document.getElementById('timer');
+const dateLabel    = document.getElementById('date-label');
+
+// ── 초기화 ────────────────────────────────────────────
+dateLabel.textContent = new Date().toLocaleDateString('ko-KR', {
+  year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+});
+
+if (apiKey) showChat();
+
+apiSaveBtn.addEventListener('click', () => {
+  const key = apiKeyInput.value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    alert('API 키가 올바르지 않아요. sk-ant- 로 시작해야 해요!');
+    return;
+  }
+  apiKey = key;
+  localStorage.setItem('suhyeon_api_key', key);
+  showChat();
+});
+
+apiKeyInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') apiSaveBtn.click();
+});
+
+// ── UI 전환 ───────────────────────────────────────────
+function showChat() {
+  apiPanel.style.display = 'none';
+  inputArea.style.display = 'flex';
+  startTimer();
+  startSession();
+}
+
+// ── 타이머 ────────────────────────────────────────────
+function startTimer() {
+  timerInterval = setInterval(() => {
+    elapsedSeconds++;
+    const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+    const s = String(elapsedSeconds % 60).padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+
+    timerEl.className = 'timer';
+    if (elapsedSeconds >= 1500) timerEl.className = 'timer overtime'; // 25분
+    else if (elapsedSeconds >= 900) timerEl.className = 'timer warning'; // 15분
+  }, 1000);
+}
+
+// ── 말풍선 ────────────────────────────────────────────
+function appendMessage(role, text) {
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+
+  if (role === 'ai') {
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = '🐉';
+    msg.appendChild(avatar);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  msg.appendChild(bubble);
+
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  const msg = document.createElement('div');
+  msg.className = 'msg ai';
+  msg.id = 'typing-indicator';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = '🐉';
+  msg.appendChild(avatar);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  msg.appendChild(bubble);
+
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+// ── API 호출 ──────────────────────────────────────────
+async function sendToAI(userText) {
+  if (isLoading) return;
+  isLoading = true;
+  sendBtn.disabled = true;
+
+  // 경과 시간 정보를 포함
+  const minutesElapsed = Math.floor(elapsedSeconds / 60);
+  const timeContext = `[현재 세션 경과 시간: ${minutesElapsed}분]`;
+
+  messages.push({ role: 'user', content: `${timeContext}\n${userText}` });
+
+  showTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const reply = data.content[0].text;
+    messages.push({ role: 'assistant', content: reply });
+
+    removeTyping();
+    appendMessage('ai', reply);
+
+    // TTS
+    speakText(reply);
+
+  } catch (err) {
+    removeTyping();
+    appendMessage('ai', '앗, 연결이 잠깐 끊겼어. 다시 한번 말해줄래? 🙏');
+    console.error(err);
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+}
+
+// ── 세션 시작 ─────────────────────────────────────────
+async function startSession() {
+  await sendToAI('안녕! 지금 막 접속했어. 오늘 수업 시작해줘.');
+}
+
+// ── 전송 ─────────────────────────────────────────────
+function handleSend() {
+  const text = userInput.value.trim();
+  if (!text || isLoading) return;
+  appendMessage('user', text);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendToAI(text);
+}
+
+sendBtn.addEventListener('click', handleSend);
+
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+
+// ── 음성 인식 (Web Speech API) ────────────────────────
+function setupSpeech() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    voiceBtn.style.display = 'none';
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    voiceBtn.classList.add('listening');
+    voiceBtn.textContent = '⏹';
+    voiceStatus.textContent = '🎙 듣고 있어... 말해봐!';
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results)
+      .map(r => r[0].transcript).join('');
+    userInput.value = transcript;
+
+    if (e.results[e.results.length - 1].isFinal) {
+      stopListening();
+      handleSend();
+    }
+  };
+
+  recognition.onerror = () => {
+    stopListening();
+    voiceStatus.textContent = '인식 실패 😅 다시 눌러봐!';
+    setTimeout(() => { voiceStatus.textContent = ''; }, 2000);
+  };
+
+  recognition.onend = () => stopListening();
+}
+
+function stopListening() {
+  isListening = false;
+  voiceBtn.classList.remove('listening');
+  voiceBtn.textContent = '🎤';
+  voiceStatus.textContent = '';
+  if (recognition) try { recognition.stop(); } catch(e) {}
+}
+
+voiceBtn.addEventListener('click', () => {
+  if (!recognition) { setupSpeech(); }
+  if (isListening) { stopListening(); return; }
+  try { recognition.start(); } catch(e) { setupSpeech(); recognition.start(); }
+});
+
+setupSpeech();
+
+// ── TTS (Web Speech Synthesis) ────────────────────────
+function speakText(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+
+  // 너무 긴 텍스트는 앞부분만
+  const maxLen = 300;
+  const speakStr = text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+
+  const utter = new SpeechSynthesisUtterance(speakStr);
+  utter.lang = 'ko-KR';
+  utter.rate = 0.95;
+  utter.pitch = 1.05;
+
+  // 한국어 목소리 찾기
+  const voices = window.speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang.startsWith('ko'));
+  if (koVoice) utter.voice = koVoice;
+
+  window.speechSynthesis.speak(utter);
+}
+
+// 보이스 목록 로드
+window.speechSynthesis?.addEventListener('voiceschanged', () => {});
+</script>
+</body>
+</html>
