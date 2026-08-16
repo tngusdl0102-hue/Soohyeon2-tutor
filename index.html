@@ -394,7 +394,15 @@ const STORIES = [
 // 새 기기에서 처음 시작할 이야기 번호(0=보기보다 착한 괴물, 1=작은 배, ...).
 // 다른 기기에서 이미 앞 이야기를 진행했다면 여기 숫자를 수동으로 바꿔서 이어갈 수 있음.
 const STARTING_STORY_INDEX = 1;
-let storyIndex = parseInt(safeStorage.getItem('suhyeon_story_index') || String(STARTING_STORY_INDEX), 10);
+
+// URL 끝에 ?story=숫자 를 붙이면 저장된 기록과 상관없이 그 이야기로 강제 시작
+// 예: https://.../?story=1  → 무조건 '작은 배'부터 시작 (캐시/기록 문제와 무관하게 확실히 지정 가능)
+const urlParams = new URLSearchParams(window.location.search);
+const forcedStoryIndex = urlParams.has('story') ? parseInt(urlParams.get('story'), 10) : null;
+
+let storyIndex = (forcedStoryIndex !== null && !isNaN(forcedStoryIndex))
+  ? forcedStoryIndex
+  : parseInt(safeStorage.getItem('suhyeon_story_index') || String(STARTING_STORY_INDEX), 10);
 if (storyIndex >= STORIES.length) storyIndex = 0;
 const currentStory = STORIES[storyIndex];
 const nextStory = STORIES[(storyIndex + 1) % STORIES.length];
