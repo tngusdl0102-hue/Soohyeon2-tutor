@@ -305,6 +305,22 @@
 
 <script>
 // ══════════════════════════════════════════════════════
+// localStorage 안전 래퍼 — 프라이빗 브라우징 등에서 접근이 막혀도
+// 스크립트 전체가 멈추지 않도록 방어. 실패하면 메모리에만 저장(새로고침 시 초기화).
+// ══════════════════════════════════════════════════════
+const memoryStore = {};
+const safeStorage = {
+  getItem(key) {
+    try { return localStorage.getItem(key); }
+    catch (e) { return (key in memoryStore) ? memoryStore[key] : null; }
+  },
+  setItem(key, value) {
+    try { localStorage.setItem(key, value); }
+    catch (e) { memoryStore[key] = value; }
+  }
+};
+
+// ══════════════════════════════════════════════════════
 // 이야기 라이브러리 — 새 이야기 추가 시 이 배열에 항목만 추가하면 됨
 // ══════════════════════════════════════════════════════
 const STORIES = [
@@ -378,11 +394,11 @@ const STORIES = [
 // 새 기기에서 처음 시작할 이야기 번호(0=보기보다 착한 괴물, 1=작은 배, ...).
 // 다른 기기에서 이미 앞 이야기를 진행했다면 여기 숫자를 수동으로 바꿔서 이어갈 수 있음.
 const STARTING_STORY_INDEX = 1;
-let storyIndex = parseInt(localStorage.getItem('suhyeon_story_index') || String(STARTING_STORY_INDEX), 10);
+let storyIndex = parseInt(safeStorage.getItem('suhyeon_story_index') || String(STARTING_STORY_INDEX), 10);
 if (storyIndex >= STORIES.length) storyIndex = 0;
 const currentStory = STORIES[storyIndex];
 const nextStory = STORIES[(storyIndex + 1) % STORIES.length];
-localStorage.setItem('suhyeon_story_index', String((storyIndex + 1) % STORIES.length));
+safeStorage.setItem('suhyeon_story_index', String((storyIndex + 1) % STORIES.length));
 
 document.getElementById('story-label').textContent = `${currentStory.title} 🌟`;
 
@@ -473,13 +489,13 @@ const SYSTEM_PROMPT = buildSystemPrompt(currentStory, nextStory.title);
 // ══════════════════════════════════════════════════════
 // 상태 & DOM
 // ══════════════════════════════════════════════════════
-let apiKey = localStorage.getItem('suhyeon_api_key') || '';
+let apiKey = safeStorage.getItem('suhyeon_api_key') || '';
 let messages = [];
 let isLoading = false;
 let elapsedSeconds = 0;
 let recognition = null;
 let isListening = false;
-let muted = localStorage.getItem('suhyeon_muted') === 'true';
+let muted = safeStorage.getItem('suhyeon_muted') === 'true';
 
 const chat         = document.getElementById('chat');
 const inputArea    = document.getElementById('input-area');
@@ -505,7 +521,7 @@ apiSaveBtn.addEventListener('click', () => {
   const key = apiKeyInput.value.trim();
   if (!key.startsWith('sk-ant-')) { alert('API 키가 올바르지 않아요. sk-ant- 로 시작해야 해요!'); return; }
   apiKey = key;
-  localStorage.setItem('suhyeon_api_key', key);
+  safeStorage.setItem('suhyeon_api_key', key);
   showChat();
 });
 
@@ -513,7 +529,7 @@ apiKeyInput.addEventListener('keydown', e => { if (e.key === 'Enter') apiSaveBtn
 
 muteBtn.addEventListener('click', () => {
   muted = !muted;
-  localStorage.setItem('suhyeon_muted', String(muted));
+  safeStorage.setItem('suhyeon_muted', String(muted));
   updateMuteButton();
   if (muted) window.speechSynthesis?.cancel();
 });
