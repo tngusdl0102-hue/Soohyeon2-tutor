@@ -746,7 +746,8 @@ function speakText(text) {
   if (!clean) return;
 
   // 문장 단위로 나눠서 자연스러운 쉼을 두고 순차 재생
-  const sentences = clean.split(/(?<=[.!?~])\s+/).filter(s => s.trim().length > 0);
+  // 룩비하인드(lookbehind)는 구형 Safari(iOS 15 등)가 지원하지 않으므로 사용하지 않음
+  const sentences = (clean.match(/[^.!?~]+[.!?~]*/g) || [clean]).map(s => s.trim()).filter(s => s.length > 0);
   const koVoice = getKoreanVoice();
 
   let i = 0;
